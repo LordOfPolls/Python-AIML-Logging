@@ -193,7 +193,7 @@ class Kernel:
 
     def saveBrain(self, filename):
         """Dump the contents of the bot's brain to a file on disk."""
-        log.info( "Saving brain to %s..." % filename, end="")
+        log.info( "Saving brain to %s..." % filename)
         start = time.clock()
         self._brain.save(filename)
         log.info( "done (%.2f seconds)" % (time.clock() - start) )
