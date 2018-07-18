@@ -26,7 +26,8 @@ from .AimlParser import create_parser
 from .PatternMgr import PatternMgr
 from .WordSub import WordSub
 
-
+from .getLog import get_module_logger
+log = get_module_logger(__name__)
 
 def msg_encoder( encoding=None ):
     """
@@ -42,8 +43,6 @@ def msg_encoder( encoding=None ):
                      lambda x : x.decode(encoding,'replace') )
 
 
-
-
 class Kernel:
     # module constants
     _globalSessionID = "_global" # key of the global session (duh)
@@ -55,7 +54,8 @@ class Kernel:
     _inputStack = "_inputStack"         # Should always be empty in between calls to respond()
 
     def __init__(self):
-        self._verboseMode = True
+        log.info("test")
+
         self._version = "python-aiml {}".format(VERSION)
         self._brain = PatternMgr()
         self._respondLock = threading.RLock()
@@ -155,12 +155,8 @@ class Kernel:
             if chdir:
                 os.chdir( prev )
 
-        if self._verboseMode:
-            print( "Kernel bootstrap completed in %.2f seconds" % (time.clock() - start) )
+        log.debug( "Kernel bootstrap completed in %.2f seconds" % (time.clock() - start) )
 
-    def verbose(self, isVerbose = True):
-        """Enable/disable verbose output mode."""
-        self._verboseMode = isVerbose
 
     def version(self):
         """Return the Kernel's version string."""
@@ -189,20 +185,18 @@ class Kernel:
         NOTE: the current contents of the 'brain' will be discarded!
 
         """
-        if self._verboseMode: print( "Loading brain from %s..." % filename, end="" )
+        log.info( "Loading brain from %s..." % filename, end="" )
         start = time.clock()
         self._brain.restore(filename)
-        if self._verboseMode:
-            end = time.clock() - start
-            print( "done (%d categories in %.2f seconds)" % (self._brain.numTemplates(), end) )
+        end = time.clock() - start
+        log.info( "done (%d categories in %.2f seconds)" % (self._brain.numTemplates(), end) )
 
     def saveBrain(self, filename):
         """Dump the contents of the bot's brain to a file on disk."""
-        if self._verboseMode: print( "Saving brain to %s..." % filename, end="")
+        log.info( "Saving brain to %s..." % filename, end="")
         start = time.clock()
         self._brain.save(filename)
-        if self._verboseMode:
-            print( "done (%.2f seconds)" % (time.clock() - start) )
+        log.info( "done (%.2f seconds)" % (time.clock() - start) )
 
     def getPredicate(self, name, sessionID = _globalSessionID):
         """Retrieve the current value of the predicate 'name' from the
@@ -325,23 +319,23 @@ class Kernel:
 
         """
         for f in glob.glob(filename):
-            if self._verboseMode: print( "Loading %s..." % f, end="")
+            log.debug("Loading %s..." % f)
             start = time.clock()
             # Load and parse the AIML file.
             parser = create_parser()
             handler = parser.getContentHandler()
             handler.setEncoding(self._textEncoding)
-            try: parser.parse(f)
+            try:
+                parser.parse(f)
             except xml.sax.SAXParseException as msg:
                 err = "\nFATAL PARSE ERROR in file %s:\n%s\n" % (f,msg)
-                sys.stderr.write(err)
+                log.error(err)
                 continue
             # store the pattern/template pairs in the PatternMgr.
             for key,tem in handler.categories.items():
                 self._brain.add(key,tem)
             # Parsing was successful.
-            if self._verboseMode:
-                print( "done (%.2f seconds)" % (time.clock() - start) )
+            log.debug("done (%.2f seconds)" % (time.clock() - start) )
 
     def respond(self, input_, sessionID = _globalSessionID):
         """Return the Kernel's response to the input string."""
@@ -410,9 +404,8 @@ class Kernel:
         # guard against infinite recursion
         inputStack = self.getPredicate(self._inputStack, sessionID)
         if len(inputStack) > self._maxRecursionDepth:
-            if self._verboseMode:
-                err = u"WARNING: maximum recursion depth exceeded (input='%s')" % self._cod.enc(input_)
-                sys.stderr.write(err)
+            err = u"WARNING: maximum recursion depth exceeded (input='%s')" % self._cod.enc(input_)
+            log.error(err)
             return u""
 
         # push the input onto the input stack
@@ -438,9 +431,8 @@ class Kernel:
         response = u""
         elem = self._brain.match(subbedInput, subbedThat, subbedTopic)
         if elem is None:
-            if self._verboseMode:
-                err = "WARNING: No match found for input: %s\n" % self._cod.enc(input_)
-                sys.stderr.write(err)
+            err = "WARNING: No match found for input: %s\n" % self._cod.enc(input_)
+            log.error(err)
         else:
             # Process the element into a response string.
             response += self._processElement(elem, sessionID).strip()
@@ -469,9 +461,8 @@ class Kernel:
             handlerFunc = self._elementProcessors[elem[0]]
         except:
             # Oops -- there's no handler function for this element type!
-            if self._verboseMode:
-                err = "WARNING: No handler found for <%s> element\n" % self._cod.enc(elem[0])
-                sys.stderr.write(err)
+            err = "WARNING: No handler found for <%s> element\n" % self._cod.enc(elem[0])
+            log.error.write(err)
             return u""
         return handlerFunc(elem, sessionID)
 
@@ -574,7 +565,7 @@ class Kernel:
                     except:
                         # No attributes, no name/value attributes, no
                         # such predicate/session, or processing error.
-                        if self._verboseMode: print( "Something amiss -- skipping listitem", li )
+                        log.debug( "Something amiss -- skipping listitem", li )
                         raise
                 if not foundMatch:
                     # Check the last element of listitems.  If it has
@@ -587,11 +578,11 @@ class Kernel:
                     except:
                         # listitems was empty, no attributes, missing
                         # name/value attributes, or processing error.
-                        if self._verboseMode: print( "error in default listitem" )
+                        log.error( "error in default listitem" )
                         raise
             except:
                 # Some other catastrophic cataclysm
-                if self._verboseMode: print( "catastrophic condition failure" )
+                log.error( "catastrophic condition failure" )
                 raise
         return response
         
@@ -690,9 +681,8 @@ class Kernel:
         except: index = 1
         try: return inputHistory[-index]
         except IndexError:
-            if self._verboseMode:
-                err = "No such index %d while processing <input> element.\n" % index
-                sys.stderr.write(err)
+            err = "No such index %d while processing <input> element.\n" % index
+            log.error.write(err)
             return ""
 
     # <javascript>
@@ -954,9 +944,8 @@ class Kernel:
         try:
             out = os.popen(command)            
         except RuntimeError as msg:
-            if self._verboseMode:
-                err = "WARNING: RuntimeError while processing \"system\" element:\n%s\n" % self._cod.enc(msg)
-                sys.stderr.write(err)
+            err = "WARNING: RuntimeError while processing \"system\" element:\n%s\n" % self._cod.enc(msg)
+            log.error.write(err)
             return "There was an error while computing my response.  Please inform my botmaster."
         time.sleep(0.01) # I'm told this works around a potential IOError exception.
         for line in out:
@@ -1029,9 +1018,8 @@ class Kernel:
             pass
         try: return outputHistory[-index]
         except IndexError:
-            if self._verboseMode:
-                err = "No such index %d while processing <that> element.\n" % index
-                sys.stderr.write(err)
+            err = "No such index %d while processing <that> element.\n" % index
+            log.error.write(err)
             return ""
 
     # <thatstar>

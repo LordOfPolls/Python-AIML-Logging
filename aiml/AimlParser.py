@@ -9,11 +9,14 @@ from xml.sax.xmlreader import Locator
 import sys
 import xml.sax
 import xml.sax.handler
-
+import logging
+import colorlog
 from .constants import *
+from .getLog import get_module_logger
+log = get_module_logger(__name__)
 
 
-class AimlParserError(Exception): 
+class AimlParserError(Exception):
     pass
 
 
@@ -135,7 +138,7 @@ class AimlHandler(ContentHandler):
         try: self._startElement(name, attr)
         except AimlParserError as err:
             # Print the error message
-            sys.stderr.write("PARSE ERROR: %s\n" % err)
+            log.error("PARSE ERROR: %s" % err)
             
             self._numParseErrors += 1 # increment error count
             # In case of a parse error, if we're inside a category, skip it.
@@ -267,7 +270,7 @@ class AimlHandler(ContentHandler):
         try: self._characters(ch)
         except AimlParserError as msg:
             # Print the message
-            sys.stderr.write("PARSE ERROR: %s\n" % msg)
+            log.error("PARSE ERROR: %s" % msg)
             self._numParseErrors += 1 # increment error count
             # In case of a parse error, if we're inside a category, skip it.
             if self._state >= self._STATE_InsideCategory:
@@ -347,7 +350,7 @@ class AimlHandler(ContentHandler):
         try: self._endElement(name)
         except AimlParserError as msg:
             # Print the message
-            sys.stderr.write("PARSE ERROR: %s\n" % msg)
+            log.error("PARSE ERROR: %s" % msg)
             self._numParseErrors += 1 # increment error count
             # In case of a parse error, if we're inside a category, skip it.
             if self._state >= self._STATE_InsideCategory:
