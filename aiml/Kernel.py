@@ -27,7 +27,7 @@ from .PatternMgr import PatternMgr
 from .WordSub import WordSub
 
 from .getLog import get_module_logger
-log = get_module_logger(__name__)
+log = get_module_logger("AIML")
 
 def msg_encoder( encoding=None ):
     """

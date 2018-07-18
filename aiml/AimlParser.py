@@ -13,7 +13,7 @@ import logging
 import colorlog
 from .constants import *
 from .getLog import get_module_logger
-log = get_module_logger(__name__)
+log = get_module_logger("AIML")
 
 
 class AimlParserError(Exception):
