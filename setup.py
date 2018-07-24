@@ -40,7 +40,7 @@ PyAIML (c) Cort Stratton
                  "Topic :: Scientific/Engineering :: Artificial Intelligence"
                  ],
  
-    install_requires = [ 'setuptools',
+    install_requires = [ 'setuptools', 'colorlog'
     ],
 
     packages=[ "aiml", 'aiml.script' ],
