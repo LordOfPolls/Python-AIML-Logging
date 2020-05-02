@@ -129,7 +129,6 @@ class Kernel:
         processing). Upon returning the current directory is moved back to 
         where it was before.
         """
-        start = time.clock()
         if brainFile:
             self.loadBrain(brainFile)
 
@@ -155,7 +154,6 @@ class Kernel:
             if chdir:
                 os.chdir( prev )
 
-        log.debug( "Kernel bootstrap completed in %.2f seconds" % (time.clock() - start) )
 
 
     def version(self):
@@ -186,17 +184,13 @@ class Kernel:
 
         """
         log.info( "Loading brain from %s..." % filename, end="" )
-        start = time.clock()
         self._brain.restore(filename)
-        end = time.clock() - start
         log.info( "done (%d categories in %.2f seconds)" % (self._brain.numTemplates(), end) )
 
     def saveBrain(self, filename):
         """Dump the contents of the bot's brain to a file on disk."""
         log.info( "Saving brain to %s..." % filename)
-        start = time.clock()
         self._brain.save(filename)
-        log.info( "done (%.2f seconds)" % (time.clock() - start) )
 
     def getPredicate(self, name, sessionID = _globalSessionID):
         """Retrieve the current value of the predicate 'name' from the
@@ -320,7 +314,6 @@ class Kernel:
         """
         for f in glob.glob(filename):
             log.debug("Loading %s..." % f)
-            start = time.clock()
             # Load and parse the AIML file.
             parser = create_parser()
             handler = parser.getContentHandler()
@@ -335,7 +328,6 @@ class Kernel:
             for key,tem in handler.categories.items():
                 self._brain.add(key,tem)
             # Parsing was successful.
-            log.debug("done (%.2f seconds)" % (time.clock() - start) )
 
     def respond(self, input_, sessionID = _globalSessionID):
         """Return the Kernel's response to the input string."""
